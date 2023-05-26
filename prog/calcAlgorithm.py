@@ -188,9 +188,8 @@ class calcAlgorithm(object):
     def sendREDIS(self,config,dict,r=None):
 
         if r==None:
-          passwd = config['REDISpassword']  #'+NsJ9U13XJGPUyhWSBP8lx2p7aR4Mz2Nzb9PuPcSJ3c='
-          #redisServer='ecml-rio.redis.cache.windows.net'
-          redisServer=config['REDISserver']  #51.137.96.149'
+          passwd = config['REDISpassword']  
+          redisServer=config['REDISserver'] 
           
           for key in dict.keys():
               if key !='Timestamp' and key != 'DeviceId':
