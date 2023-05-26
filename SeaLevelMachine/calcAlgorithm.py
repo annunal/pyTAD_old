@@ -1,4 +1,4 @@
-#from readConfig import *
+from readConfig import *
 from process import solve2,addpoint,addpoint1,rootMeanSquare
 import datetime
 import math,random
@@ -25,7 +25,7 @@ class calcAlgorithm(object):
     _n300=0
     debug=False
     #_DtAverage=0.0
-    def __init__(self,kk,basedir,config,buffer=None):
+    def __init__(self,kk,basedir,config,buffer):
         self._config=config #readConfig(basedir)
         self._n30=int(self._config['n30'])
         self._n300=int(self._config['n300'])
@@ -40,18 +40,9 @@ class calcAlgorithm(object):
         self._DtAverage   =float(self._config['Interval'])
         self._Tmax30=self._n30*self._DtAverage
         self._Tmax300=self._n300*self._DtAverage 
-        if buffer==None:            
-            self._index300=0
-            self._x300=[0.0]*(self._n300+1)
-            self._y300=[0.0]*(self._n300+1)
-            self._yavg30=[0.0]*(self._n300+1)
-            self._yavg300=[0.0]*(self._n300+1)
-            self._diffe=[0.0]*(self._n300+1)
-            self._index1=0
-        else: 
-            self._index300,self._index1,self._x300,self._y300,self._yavg30,self._yavg300=buffer
+        self._index300,self._index1,self._x300,self._y300,self._yavg30,self._yavg300=buffer
         if self._index1==0:
-            self._LastDateTimeAcquired = datetime.datetime.utcnow()-datetime.timedelta(seconds=24*3600*2)
+            self._LastDateTimeAcquired = datetime.datetime.utcnow()-datetime.timedelta(seconds=7*24*3600)
         else:
             self._LastDateTimeAcquired = self._x300[self._index300-1]        
         
@@ -83,6 +74,7 @@ class calcAlgorithm(object):
                 delta=1e6
                 self._index300=0
             if self.debug: print('deltaTime min buffer (h)',delta)
+            print('deltaTime min buffer',delta, 'last datetime',format(datetime.strptime(lastts,'%Y-%m-%d %H:%M:%S')))
             if self._index300==max300+1 and len(rows)>=max300+1 and delta<2*24:
                 try:
                     for i in range(1,self._index300):
@@ -180,7 +172,7 @@ class calcAlgorithm(object):
         else:
             alertSignal = 0.0
 
-        if (alertSignal>self._ratioRMS*rms+self._AddRMS  and alertSignal>self._threshold):
+        if (alertSignal>self._ratioRMS*rms and alertSignal>self._threshold):
                 if (self._alertValue<10):
                     self._alertValue += 1;
         else:
@@ -196,9 +188,8 @@ class calcAlgorithm(object):
     def sendREDIS(self,config,dict,r=None):
 
         if r==None:
-          passwd = config['REDISpassword']  #'+NsJ9U13XJGPUyhWSBP8lx2p7aR4Mz2Nzb9PuPcSJ3c='
-          #redisServer='ecml-rio.redis.cache.windows.net'
-          redisServer=config['REDISserver']  #51.137.96.149'
+          passwd = config['REDISpassword']  
+          redisServer=config['REDISserver'] 
           
           for key in dict.keys():
               if key !='Timestamp' and key != 'DeviceId':
@@ -206,12 +197,12 @@ class calcAlgorithm(object):
           r = redis.Redis(host=redisServer, port=6380, db=0,ssl=True,password=passwd)
         #resp=r.publish('Telemetry-Channel', json.dumps(dict))
         URL='https://webcritech.jrc.ec.europa.eu/tad_server/api/Data/PostAsync'
-        #print (json.dumps(dict))
+        print (json.dumps(dict))
         if not 'FeatureId' in dict:
             dict['FeatureId']=''
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         x = requests.post(URL, data=json.dumps(dict), headers=headers)
-        #print('resp=',x.text)
+        print('resp=',x.text)
         return r,x.text
 
     def prepareREDIS(self,dict,k,config, tt, avg,fore30,fore300,rms,alertSignal,alertValue, log0,  press = 0,  temp = 0,  batt = 0):
